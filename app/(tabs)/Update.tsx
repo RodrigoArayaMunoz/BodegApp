@@ -11,7 +11,7 @@ interface Product {
   producto_ubicacion: string
 }
 
-export default function BuscarScreen() {
+export default function Update() {
   const [searchQuery, setSearchQuery] = useState("")
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(false)
@@ -56,10 +56,10 @@ export default function BuscarScreen() {
 
         <View style={styles.searchContainer}>
           <View style={styles.inputContainer}>
-            <Search size={20} />
+            <Search size={20} color="#6b7280" style={styles.searchIcon} />
             <TextInput
               style={styles.searchInput}
-              placeholder="Ingresa el código del producto"
+              placeholder="Ingresa el nombre del producto..."
               value={searchQuery}
               onChangeText={setSearchQuery}
               onSubmitEditing={handleSearch}
