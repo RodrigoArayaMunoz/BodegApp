@@ -26,8 +26,8 @@ export default function BuscarScreen() {
     try {
       const { data, error } = await supabase
         .from("Productos")
-        .select("producto_nombre, producto_ubicacion")
-        .eq("producto_id", searchQuery.trim())
+        .select("DESCRIPCION, PRODUCTO_UBICACION")
+        .eq("CODIGO_ARTICULO", searchQuery.trim())
         .single()
 
       if (error) {
@@ -39,7 +39,11 @@ export default function BuscarScreen() {
           throw error
         }
       } else {
-        setProduct(data as Product)
+        setProduct({
+          id: 0, // or another appropriate value if you have an id
+          producto_nombre: data.DESCRIPCION,
+          producto_ubicacion: data.PRODUCTO_UBICACION,
+        })
       }
     } catch (error) {
       console.error("Error searching product:", error)
