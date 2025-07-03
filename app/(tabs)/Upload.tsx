@@ -1,15 +1,20 @@
 "use client"
 
+import { supabase } from "@/lib/supabase";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system";
+import { Activity } from "lucide-react-native";
 import React from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import * as XLSX from "xlsx";
 
 
 
 export default function Upload() {
 const [excelData, setExcelData] = React.useState(null);
+const [isProcessing, setIsProcessing] = React.useState(false);
+const [modalVisible, setModalVisible] = React.useState(false);
+const [statusMessage, setStatusMessage] = React.useState("");
 
 const handledPickExcel = async () => {
   try {
@@ -44,11 +49,46 @@ const handledPickExcel = async () => {
       header: 1, // Leer los datos como un array de arrays 
       });
 
+      //Comenzar carga de excel
+      setIsProcessing(true);
+      setModalVisible(true);
+      setStatusMessage("Procesando archivo...");
+
+      //Convertir data y enviar a supabase o donde sea necesario
+      const headers = data[0] as string[]; // Asumimos que la primera fila contiene los encabezados
+      const rows = data.slice(1); // El resto son los datos
+      
+      for (const row of rows) {
+        const rowArray = row as any[];
+        const rowData: Record<string, any> = {};
+        headers.forEach((header, i) => {
+          rowData[header] = rowArray[i];
+        });
+
+           const { error } = await supabase.from("Productos").insert(rowData);
+        if (error) throw error;
+      }
+
+            // Éxito
+      setStatusMessage("CARGA DE INVENTARIO EXITOSA");
+
+      setTimeout(() => {
+        setModalVisible(false);
+        setIsProcessing(false);
+        setStatusMessage("");
+      }, 2000); // Oculta después de 3 segundos
+
     setExcelData(data as any); // Guardar los datos en el estado
 
     console.log("Datos del archivo Excel:", data);
   } catch (error) {
     console.error("Error al procesar el archivo Excel:", error);
+          setStatusMessage("ERROR EN LA CARGA");
+      setTimeout(() => {
+        setModalVisible(false);
+        setIsProcessing(false);
+        setStatusMessage("");
+      }, 3000);
   }
 };
 
@@ -70,6 +110,19 @@ const handledPickExcel = async () => {
 
 
       </View>
+
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalVisible}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalBox}>
+              {isProcessing && <Activity size={24} color="#2563eb" />}
+              <Text style = {styles.ModalText}>{statusMessage}</Text>
+            </View>
+            </View>
+        </Modal>
     </ScrollView>
   )
 }
@@ -179,5 +232,25 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#111827",
     fontWeight: "500",
+  },
+
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalBox: {
+    backgroundColor: "#ffffff",
+    padding: 30,
+    borderRadius: 20,
+    alignItems: "center",
+    },
+  ModalText: {
+    marginTop: 10,
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#111827",
+    textAlign: "center",
   },
 })
