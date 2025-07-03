@@ -1,10 +1,56 @@
 "use client"
 
+import * as DocumentPicker from "expo-document-picker";
+import * as FileSystem from "expo-file-system";
+import React from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import * as XLSX from "xlsx";
 
 
 
 export default function Upload() {
+const [excelData, setExcelData] = React.useState(null);
+
+const handledPickExcel = async () => {
+  try {
+        const result = await DocumentPicker.getDocumentAsync({
+          type:
+            ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", //. archivo en formato XLSX]
+            "application/vnd.ms-excel", // archivo en formato XLS
+            ],
+          copyToCacheDirectory: true,
+        });
+
+    if (result.canceled || !result.assets || !result.assets[0]) {
+      console.log("Datos del archivo Excel:");
+      return;
+    }
+
+    const fileUri = result.assets[0].uri
+
+    //Leer el archivo como base64
+    const base64 = await FileSystem.readAsStringAsync(fileUri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+
+
+    //Procesar archivo excel
+    const workbook = XLSX.read(base64, { type: "base64" });
+
+    const sheetName = workbook.SheetNames[0]; // Obtener el nombre de la primera hoja
+    const worksheet = workbook.Sheets[sheetName]; // Obtener la primera hoja del libro de trabajo
+
+    const data = XLSX.utils.sheet_to_json(worksheet, {
+      header: 1, // Leer los datos como un array de arrays 
+      });
+
+    setExcelData(data as any); // Guardar los datos en el estado
+
+    console.log("Datos del archivo Excel:", data);
+  } catch (error) {
+    console.error("Error al procesar el archivo Excel:", error);
+  }
+};
 
 
   return (
@@ -15,7 +61,7 @@ export default function Upload() {
         <View style={styles.searchContainer}>
 
 
-          <TouchableOpacity style={styles.searchButton}>
+          <TouchableOpacity style={styles.searchButton} onPress={handledPickExcel}>
  
               <Text style={styles.searchButtonText}>Cargar Archivo</Text>
             
